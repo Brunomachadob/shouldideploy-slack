@@ -1,0 +1,10 @@
+{
+  "name": "shouldideploy-slack",
+  "profile": "brunomachadob",
+  "regions": [
+    "eu-central-1"
+  ],
+  "lambda": {
+    "memory": 128
+  }
+}
