@@ -1,9 +1,11 @@
 const { createServer } = require('http');
 const { get } = require('https');
 
-const { PORT = 3000 } = process.env
+const { PORT = 3000 } = process.env;
 
 const HOST = 'https://shouldideploy.today';
+const DEFAULT_TZ = 'UTC';
+const DEFAULT_MESSAGE = "Failed to query API. This shouldn't be a good sign.";
 
 const COLORS = {
     true: '#36a64f',
@@ -20,36 +22,40 @@ const FOOTER_ICON = {
     false: `${HOST}/dots-red.png`,
 };
 
-createServer(async (req, res) => {
+createServer(async (_, res) => {
+    let apiResponse;
+
     try {
-        const { timezone, shouldideploy, message } = await request(`${HOST}/api`);
-
-        const time = new Date().toLocaleString('en-US', {
-            timeZone: timezone
-        });
-
-        const slackMessageResponse = {
-            "attachments": [
-                {
-                    "text": message,
-                    "color": COLORS[shouldideploy],
-                    "thumb_url": THUMB_URL[shouldideploy],
-                    "footer": `Should I deploy today | ${timezone}`,
-                    "footer_icon": FOOTER_ICON[shouldideploy],
-                    "ts": new Date(time).getTime()
-                }
-            ]
-        };
-
-        res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify(slackMessageResponse));
+        apiResponse = await request(`${HOST}/api`);
     } catch (err) {
         console.error(err);
-        res.end('Failed to query API');
+        apiResponse = { shouldideploy: false, message: DEFAULT_MESSAGE, timezone: DEFAULT_TZ }
     }
+
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify(buildSlackResponse(apiResponse)));
 }).listen(PORT);
 
-async function request(url) {
+function buildSlackResponse({ shouldideploy, message, timezone }) {
+    const time = new Date().toLocaleString('en-US', {
+        timeZone: timezone
+    });
+
+    return {
+        "attachments": [
+            {
+                "text": message,
+                "color": COLORS[shouldideploy],
+                "thumb_url": THUMB_URL[shouldideploy],
+                "footer": `Should I deploy today | ${timezone}`,
+                "footer_icon": FOOTER_ICON[shouldideploy],
+                "ts": new Date(time).getTime()
+            }
+        ]
+    }
+}
+
+function request(url) {
     return new Promise((resolve, reject) => {
         get(url, (resp) => {
             let data = '';
