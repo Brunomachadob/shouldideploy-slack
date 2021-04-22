@@ -26,7 +26,7 @@ createServer(async (_, res) => {
     let apiResponse;
 
     try {
-        apiResponse = await request(`${HOST}/api`);
+        apiResponse = await requestApi(`${HOST}/api`);
     } catch (err) {
         console.error(err);
         apiResponse = { shouldideploy: false, message: DEFAULT_MESSAGE, timezone: DEFAULT_TZ }
@@ -42,20 +42,21 @@ function buildSlackResponse({ shouldideploy, message, timezone }) {
     });
 
     return {
-        "attachments": [
+        'response_type': 'in_channel',
+        'attachments': [
             {
-                "text": message,
-                "color": COLORS[shouldideploy],
-                "thumb_url": THUMB_URL[shouldideploy],
-                "footer": `Should I deploy today | ${timezone}`,
-                "footer_icon": FOOTER_ICON[shouldideploy],
-                "ts": new Date(time).getTime()
+                'text': message,
+                'color': COLORS[shouldideploy],
+                'thumb_url': THUMB_URL[shouldideploy],
+                'footer': `Should I deploy today | ${timezone}`,
+                'footer_icon': FOOTER_ICON[shouldideploy],
+                'ts': new Date(time).getTime()
             }
         ]
     }
 }
 
-function request(url) {
+function requestApi(url) {
     return new Promise((resolve, reject) => {
         get(url, (resp) => {
             let data = '';
